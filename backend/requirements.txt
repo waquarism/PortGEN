@@ -21,3 +21,17 @@ tqdm==4.67.1
 typing_extensions==4.15.0
 urllib3==2.5.0
 wcwidth==0.2.13
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+pdfminer.six
+python-docx
+spacy
+jinja2
+aiofiles
+python-magic
+email-validator
+python-docx
+PyPDF2
+python-slugify
