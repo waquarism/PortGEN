@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>{{ data.name }} — Portfolio</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <header>
+    <h1>{{ data.name }}</h1>
+    <p>
+      {% if data.emails %} <a href="mailto:{{ data.emails[0] }}">{{ data.emails[0] }}</a> {% endif %}
+      {% if data.phones %} | {{ data.phones[0] }} {% endif %}
+    </p>
+  </header>
+  <main>
+    {% if data.summary %}
+    <section>
+      <h2>About</h2>
+      <p>{{ data.summary }}</p>
+    </section>
+    {% endif %}
+    {% if data.skills %}
+    <section>
+      <h2>Skills</h2>
+      <ul>
+      {% for s in data.skills %}
+        <li>{{ s }}</li>
+      {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+    {% if data.experience %}
+    <section>
+      <h2>Experience</h2>
+      {% for e in data.experience %}
+        <div class="exp">{{ e }}</div>
+      {% endfor %}
+    </section>
+    {% endif %}
+    {% if data.education %}
+    <section>
+      <h2>Education</h2>
+      <ul>
+      {% for ed in data.education %}
+        <li>{{ ed }}</li>
+      {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+    {% if data.projects %}
+    <section>
+      <h2>Projects</h2>
+      {% for p in data.projects %}
+        <div class="proj">{{ p }}</div>
+      {% endfor %}
+    </section>
+    {% endif %}
+  </main>
+  <footer>
+    Generated with AI Portfolio Generator
+  </footer>
+</body>
+</html>

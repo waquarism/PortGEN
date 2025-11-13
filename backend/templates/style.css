@@ -1,0 +1,5 @@
+body { font-family: Arial, Helvetica, sans-serif; max-width:900px; margin:30px auto; color:#222; line-height:1.6; padding:0 16px; }
+header h1 { margin:0; font-size:32px;}
+section { margin-top:20px; }
+.exp, .proj { padding:10px; border-left:4px solid #333; margin-bottom:8px; background:#f8f8f8; }
+ul { list-style: disc; margin-left:20px; }
