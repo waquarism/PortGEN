@@ -4,8 +4,9 @@ from typing import Dict, Any, List
 import spacy
 from pdfminer.high_level import extract_text as extract_text_pdf
 from docx import Document
+import en_core_web_sm
 
-nlp = spacy.load("en_core_web_sm")
+nlp = en_core_web_sm.load()
 
 EMAIL_RE = re.compile(r"[\w\.-]+@[\w\.-]+")
 PHONE_RE = re.compile(r"(\+?\d[\d\s\-\(\)]{6,}\d)")
