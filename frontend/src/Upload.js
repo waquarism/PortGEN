@@ -17,7 +17,7 @@ export default function Upload() {
     fd.append("file", file);
 
     try {
-      const res = await axios.post("http://localhost:8000/parse", fd, {
+      const res = await axios.post("https://portgen.onrender.com/parse", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setPreview(res.data.parsed);
@@ -30,7 +30,7 @@ export default function Upload() {
   };
 
   const downloadZip = async () => {
-    const res = await axios.get(`http://localhost:8000/generate/${id}`, {
+    const res = await axios.get(`https://portgen.onrender.com/generate/${id}`, {
       responseType: "blob",
     });
 
