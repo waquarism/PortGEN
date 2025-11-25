@@ -12,7 +12,7 @@ function App() {
 
         {/* ---------------- HEADER ---------------- */}
         <header className="flex justify-between items-center px-8 py-5 shadow-sm bg-white dark:bg-gray-800">
-          <h1 className="text-2xl font-extrabold tracking-tight">PortGen</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight">PortGEN</h1>
 
           <button
             onClick={() => setDarkMode(!darkMode)}
