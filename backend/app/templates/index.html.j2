@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>{{ data.personalInfo.fullName }} — Portfolio</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <header>
+    <h1>{{ data.personalInfo.fullName }}</h1>
+    <p>
+      {{ data.personalInfo.jobTitle }}
+      {% if data.personalInfo.email %} | <a href="mailto:{{ data.personalInfo.email }}">{{ data.personalInfo.email }}</a> {% endif %}
+      {% if data.personalInfo.phone %} | {{ data.personalInfo.phone }} {% endif %}
+    </p>
+    {% if data.personalInfo.socialLinks %}
+    <p class="socials">
+        {% for k,v in data.personalInfo.socialLinks.items() %}
+            <a href="{{v}}">{{k|capitalize}}</a> 
+        {% endfor %}
+    </p>
+    {% endif %}
+  </header>
+  <main>
+    {% if data.personalInfo.summary %}
+    <section>
+      <h2>About</h2>
+      <p>{{ data.personalInfo.summary }}</p>
+    </section>
+    {% endif %}
+    
+    {% if data.skills.technical %}
+    <section>
+      <h2>Skills</h2>
+      <ul>
+      {% for s in data.skills.technical %}
+        <li>{{ s }}</li>
+      {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    {% if data.experience %}
+    <section>
+      <h2>Experience</h2>
+      {% for e in data.experience %}
+        <div class="exp">
+            <h3>{{ e.role }} {% if e.company %} at {{ e.company }} {% endif %}</h3>
+            {% if e.startDate or e.endDate %}
+            <small>{{ e.startDate }} - {{ e.endDate }}</small>
+            {% endif %}
+            {% if e.description %}
+            <ul>
+                {% for d in e.description %}
+                <li>{{ d }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if data.education %}
+    <section>
+      <h2>Education</h2>
+      <ul>
+      {% for ed in data.education %}
+        <li>
+            <strong>{{ ed.degree }}</strong>, {{ ed.institution }}
+            {% if ed.endDate %} ({{ ed.endDate }}) {% endif %}
+        </li>
+      {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+    
+    {% if data.projects %}
+    <section>
+      <h2>Projects</h2>
+      {% for p in data.projects %}
+        <div class="proj">
+            <h3>{{ p.title }}</h3>
+            <p>{{ p.description }}</p>
+        </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+  </main>
+  <footer>
+    Generated with AI Portfolio Generator
+  </footer>
+</body>
+</html>

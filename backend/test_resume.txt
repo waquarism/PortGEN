@@ -1,0 +1,21 @@
+John Doe
+Software Engineer
+john.doe@example.com
++1 123 456 7890
+
+Summary
+Passionate software engineer with 5 years of experience in Python and React.
+
+Experience
+Senior Developer at Google
+Developed cloud solutions using Go and Kubernetes. 2020-Present.
+
+Software Engineer at Microsoft
+Worked on Azure networking. 2018-2020.
+
+Education
+Master of Computer Science
+Stanford University in 2018
+
+Skills
+Python, Java, React, Docker, Kubernetes

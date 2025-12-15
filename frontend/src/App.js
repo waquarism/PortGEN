@@ -5,6 +5,7 @@ import { Sun, Moon } from "lucide-react";
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <div className={`${darkMode ? "dark" : ""}`}>
@@ -18,15 +19,15 @@ function App() {
             onClick={() => setDarkMode(!darkMode)}
             className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 transition"
           >
-            {darkMode ? <Sun size={20}/> : <Moon size={20}/>}
+            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
         </header>
 
         {/* ---------------- HERO ---------------- */}
-        <main className="max-w-5xl mx-auto px-6 py-14">
-          <section className="flex flex-col md:flex-row items-center gap-12">
-            <div className="md:w-1/2 text-center md:text-left">
-              <motion.h2 
+        <main className={`mx-auto px-6 py-14 transition-all duration-500 ${isExpanded ? 'max-w-7xl' : 'max-w-5xl'}`}>
+          <section className={`flex flex-col md:flex-row items-center gap-12 ${isExpanded ? 'justify-center' : ''}`}>
+            <div className={`text-center md:text-left transition-all duration-500 ${isExpanded ? 'w-full' : 'md:w-1/2'}`}>
+              <motion.h2
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="text-4xl font-bold mb-4"
@@ -34,18 +35,20 @@ function App() {
                 Create Your Portfolio Automatically
               </motion.h2>
 
-              <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
+              <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto md:mx-0">
                 Upload your resume in PDF or DOCX format and let AI generate a complete professional portfolio website — including template, content, and downloadable code.
               </p>
 
-              <Upload />
+              <Upload onExpand={() => setIsExpanded(true)} />
             </div>
 
-            <img 
-              src="/illustrate.png"
-              alt="resume-illustration"
-              className="w-64 md:w-1/2"
-            />
+            {!isExpanded && (
+              <img
+                src="/illustrate.png"
+                alt="resume-illustration"
+                className="w-64 md:w-1/2"
+              />
+            )}
 
           </section>
 
