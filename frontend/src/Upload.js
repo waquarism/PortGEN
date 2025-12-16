@@ -1,8 +1,16 @@
 import axios from "axios";
 import { motion } from "framer-motion";
-import { FileUp, FileText, Download, Save, RefreshCw, Briefcase, GraduationCap, Link2, Code, Plus, Trash2 } from "lucide-react";
+import { FileUp, FileText, Download, Save, RefreshCw, Briefcase, GraduationCap, Link2, Code, Plus, Trash2, Layout, Palette, Terminal, Grid3X3, User } from "lucide-react";
 
 import React, { useState } from "react";
+
+const TEMPLATES = [
+  { id: "react-minimal", name: "Minimalist", icon: <User />, desc: "Clean, simple, and effective.", color: "bg-gray-100 border-gray-300" },
+  { id: "react-creative", name: "Creative", icon: <Palette />, desc: "Vibrant gradients & glassmorphism.", color: "bg-gradient-to-br from-indigo-100 to-purple-100 border-purple-300" },
+  { id: "react-dark-tech", name: "Dark Tech", icon: <Terminal />, desc: "Hacker/Terminal aesthetic.", color: "bg-gray-900 text-green-400 border-green-800" },
+  { id: "react-professional", name: "Corporate", icon: <Briefcase />, desc: "Elegant, serif typography.", color: "bg-stone-50 border-stone-200" },
+  { id: "react-grid-art", name: "Grid Art", icon: <Grid3X3 />, desc: "Bento-box style layout.", color: "bg-lime-50 border-lime-300" },
+];
 
 export default function Upload({ onExpand }) {
   const [file, setFile] = useState(null);
@@ -10,6 +18,7 @@ export default function Upload({ onExpand }) {
   const [id, setId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [genLoading, setGenLoading] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState("react-minimal");
 
   const upload = async () => {
     if (!file) return alert("Please choose a file.");
@@ -113,7 +122,7 @@ export default function Upload({ onExpand }) {
       const res = await axios.post(`http://localhost:8000/generate/${id}`,
         {
           data: preview,
-          template: "react-minimal"
+          template: selectedTemplate
         },
         {
           responseType: "blob",
@@ -123,7 +132,7 @@ export default function Upload({ onExpand }) {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${id}_portfolio.zip`;
+      a.download = `${id}_${selectedTemplate}.zip`;
       a.click();
     } catch (e) {
       alert("Generation failed");
@@ -310,13 +319,40 @@ export default function Upload({ onExpand }) {
             </div>
           </div>
 
-          <div className="p-6 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700 flex flex-col items-center">
-            <button onClick={downloadZip} disabled={genLoading}
-              className="px-8 py-4 bg-green-600 hover:bg-green-700 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-1 flex items-center gap-3 w-full max-w-md justify-center">
-              {genLoading ? <RefreshCw className="animate-spin" /> : <Download />}
-              {genLoading ? "Packaging Portfolio..." : "Download React Codebase"}
-            </button>
-            <p className="mt-3 text-xs text-gray-500">Includes React source code, pre-configured Tailwind, and your data JSON.</p>
+          {/* TEMPLATE SELECTION */}
+          <div className="p-6 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Layout size={20} className="text-purple-600" /> Choose Style</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+              {TEMPLATES.map(t => (
+                <div
+                  key={t.id}
+                  onClick={() => setSelectedTemplate(t.id)}
+                  className={`cursor-pointer rounded-xl p-4 border-2 transition-all relative overflow-hidden group ${selectedTemplate === t.id
+                      ? "border-blue-500 ring-2 ring-blue-500/20 shadow-lg scale-105 bg-white z-10"
+                      : "border-transparent bg-white/50 hover:bg-white hover:border-gray-300 hover:shadow-md"
+                    }`}
+                >
+                  <div className={`h-16 rounded-lg mb-3 flex items-center justify-center ${t.color}`}>
+                    {t.icon}
+                  </div>
+                  <h4 className="font-bold text-sm mb-1">{t.name}</h4>
+                  <p className="text-xs text-gray-500 leading-tight">{t.desc}</p>
+
+                  {selectedTemplate === t.id && (
+                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500"></div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col items-center">
+              <button onClick={downloadZip} disabled={genLoading}
+                className="px-8 py-4 bg-green-600 hover:bg-green-700 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition transform hover:-translate-y-1 flex items-center gap-3 w-full max-w-md justify-center">
+                {genLoading ? <RefreshCw className="animate-spin" /> : <Download />}
+                {genLoading ? `Packaging ${selectedTemplate}...` : "Download React Codebase"}
+              </button>
+              <p className="mt-3 text-xs text-gray-500">Includes React source code, pre-configured Tailwind, and your data JSON.</p>
+            </div>
           </div>
 
         </motion.div>

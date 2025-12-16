@@ -14,9 +14,13 @@ def test():
         import json
         print(json.dumps(data, indent=2, ensure_ascii=False))
         
+        
         # Simple assertions
+        email_val = data["personalInfo"]["email"]
+        print(f"DEBUG: Email value: '{email_val}', Type: {type(email_val)}")
+        
         assert "John Doe" in data["personalInfo"]["fullName"] or "John Doe" in str(data)
-        assert "john.doe@example.com" in data["personalInfo"]["email"]
+        assert "john.doe@example.com" in email_val
         print("\nSUCCESS: Parsing completed and basic checks passed.")
     except Exception as e:
         print(f"\nFAILURE: {e}")

@@ -25,22 +25,19 @@ def generate_portfolio_zip(parsed: dict, zip_path: str, template_id: str = "reac
         shutil.rmtree(tmpdir)
     
     # Logic for different templates
-    if template_id == "react-minimal":
-        # Copy the whole react template folder
-        template_src = os.path.join(TEMPLATE_DIR, "react-minimal")
-        if not os.path.exists(template_src):
-             # Fallback or error
-             raise ValueError(f"Template {template_id} not found at {template_src}")
-        
-        shutil.copytree(template_src, tmpdir)
-        
-        # Inject data
-        import json
-        data_path = os.path.join(tmpdir, "src", "portfolio-data.json")
-        with open(data_path, "w", encoding="utf-8") as f:
-            json.dump(parsed, f, indent=2, ensure_ascii=False)
-            
-    else:
+    # Dynamic template resolution
+    template_src = os.path.join(TEMPLATE_DIR, template_id)
+    if not os.path.exists(template_src):
+            # Fallback or error
+            raise ValueError(f"Template {template_id} not found at {template_src}")
+    
+    shutil.copytree(template_src, tmpdir)
+    
+    # Inject data
+    import json
+    data_path = os.path.join(tmpdir, "src", "portfolio-data.json")
+    with open(data_path, "w", encoding="utf-8") as f:
+        json.dump(parsed, f, indent=2, ensure_ascii=False)
         # Fallback to old static HTML method if needed, or error
         # extracting old logic into a sub function if we want to keep it
         os.makedirs(tmpdir, exist_ok=True)

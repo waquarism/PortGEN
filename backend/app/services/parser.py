@@ -9,19 +9,18 @@ from transformers import pipeline, AutoTokenizer, AutoModelForTokenClassificatio
 EMAIL_RE = re.compile(r"[\w\.-]+@[\w\.-]+")
 PHONE_RE = re.compile(r"(\+?\d[\d\s\-\(\)]{6,}\d)")
 
-# Load BERT Model (Lazy loading or global)
-# Using yashpwr/resume-ner-bert-v2 as requested
+# New Model: aggret/roberta-base-resume-parser -> Revert to working BERT but with better logic
 MODEL_NAME = "yashpwr/resume-ner-bert-v2"
 nlp_pipeline = None
 
 def get_pipeline():
     global nlp_pipeline
     if nlp_pipeline is None:
-        print("Loading BERT model...")
+        print(f"Loading model {MODEL_NAME}...")
         tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
         model = AutoModelForTokenClassification.from_pretrained(MODEL_NAME)
         nlp_pipeline = pipeline("ner", model=model, tokenizer=tokenizer, aggregation_strategy="simple")
-        print("BERT model loaded.")
+        print("Model loaded.")
     return nlp_pipeline
 
 def extract_text_from_docx(path: str) -> str:
@@ -42,6 +41,22 @@ def find_emails(text: str) -> List[str]:
 
 def find_phones(text: str) -> List[str]:
     return PHONE_RE.findall(text)
+
+def find_social_links(text: str) -> Dict[str, str]:
+    links = {}
+    # Simple regex for LinkedIn and GitHub
+    linkedin_re = re.compile(r"(https?://(?:www\.)?linkedin\.com/in/[\w\-]+)")
+    github_re = re.compile(r"(https?://(?:www\.)?github\.com/[\w\-]+)")
+    
+    li = linkedin_re.search(text)
+    if li:
+        links["linkedin"] = li.group(1)
+    
+    gh = github_re.search(text)
+    if gh:
+        links["github"] = gh.group(1)
+            
+    return links
 
 def simple_section_split(text: str) -> Dict[str,str]:
     # Break into lines and detect headings using common section names
@@ -64,31 +79,50 @@ def simple_section_split(text: str) -> Dict[str,str]:
             sections.setdefault(current, []).append(line)
     return {k: "\n".join(v) for k,v in sections.items()}
 
-
-def find_social_links(text: str) -> Dict[str, str]:
-    links = {}
-    # Simple regex for LinkedIn and GitHub
-    linkedin_re = re.compile(r"(https?://(?:www\.)?linkedin\.com/in/[\w\-]+)")
-    github_re = re.compile(r"(https?://(?:www\.)?github\.com/[\w\-]+)")
-    portfolio_re = re.compile(r"(https?://[\w\-\.]+\.(?:com|dev|io|net|org)(?:/[\w\-]+)?)")
-
-    li = linkedin_re.search(text)
-    if li:
-        links["linkedin"] = li.group(1)
+def group_entities_by_proximity(entities, primary_label, secondary_label, threshold=100):
+    """
+    Groups entities that are close to each other in the text.
+    For example, groups 'Designation' (primary) with the nearest 'Company' (secondary).
+    """
+    primaries = [e for e in entities if e['entity_group'] == primary_label]
+    secondaries = [e for e in entities if e['entity_group'] == secondary_label]
     
-    gh = github_re.search(text)
-    if gh:
-        links["github"] = gh.group(1)
-
-    # Allow other portfolio links if not the same as above
-    # This is a bit loose, but works for the demo
-    for m in portfolio_re.finditer(text):
-        url = m.group(1)
-        if "linkedin.com" not in url and "github.com" not in url:
-            links["portfolio"] = url
-            break # Just take the first likely portfolio link
+    grouped = []
+    
+    # Simple greedy matching: for each primary, find closest secondary
+    # Ideally we sort by start position
+    primaries.sort(key=lambda x: x['start'])
+    secondaries.sort(key=lambda x: x['start'])
+    
+    used_secondaries = set()
+    
+    for p in primaries:
+        best_match = None
+        min_dist = float('inf')
+        
+        p_center = (p['start'] + p['end']) / 2
+        
+        for i, s in enumerate(secondaries):
+            if i in used_secondaries:
+                continue
             
-    return links
+            s_center = (s['start'] + s['end']) / 2
+            dist = abs(p_center - s_center)
+            
+            if dist < min_dist and dist < threshold:
+                min_dist = dist
+                best_match = i
+        
+        item = {primary_label: p['word']}
+        if best_match is not None:
+            item[secondary_label] = secondaries[best_match]['word']
+            used_secondaries.add(best_match)
+        else:
+            item[secondary_label] = ""
+            
+        grouped.append(item)
+        
+    return grouped
 
 def parse_resume(path: str) -> Dict[str, Any]:
     text = extract_text(path)
@@ -102,10 +136,11 @@ def parse_resume(path: str) -> Dict[str, Any]:
 
     # BERT Extraction
     ner = get_pipeline()
-    # Truncate to avoid excessive processing time/memory for now
+    # Truncate to avoid excessive processing time/memory
     truncated_text = text[:5000] 
     entities = ner(truncated_text)
-
+    
+    # Clean up entities (remove punctuation artifacts if any)
     # Aggregate Entities
     parsed_entities = {
         "Name": [],
@@ -114,7 +149,9 @@ def parse_resume(path: str) -> Dict[str, Any]:
         "Skills": [],
         "Degree": [],
         "College Name": [],
-        "Graduation Year": []
+        "Graduation Year": [],
+        "Location": [],
+        "Email Address": []
     }
     
     for ent in entities:
@@ -122,6 +159,7 @@ def parse_resume(path: str) -> Dict[str, Any]:
         word = ent.get('word')
         if label and word:
             word = word.strip()
+            # Normalize label lookup if needed, but 'yashpwr/resume-ner-bert-v2' usually uses these exact keys
             if label in parsed_entities:
                 parsed_entities[label].append(word)
 
@@ -134,92 +172,108 @@ def parse_resume(path: str) -> Dict[str, Any]:
         
     job_title = parsed_entities["Designation"][0] if parsed_entities["Designation"] else "Candidate"
     
+    # Merge BERT emails with Regex emails
+    bert_emails = parsed_entities.get("Email Address", [])
+    merged_emails = list(set(emails + bert_emails))
+    
+    location = parsed_entities["Location"][0] if parsed_entities["Location"] else ""
+    
     personal_info = {
         "fullName": name,
         "jobTitle": job_title,
-        "email": emails[0] if emails else "",
+        "email": merged_emails[0] if merged_emails else "",
         "phone": phones[0] if phones else "",
-        "location": "", # hard to assume without specific NER
+        "location": location,
         "summary": summary,
         "socialLinks": social_links
     }
 
-    # 2. Education
-    education_entries = []
-    degrees = parsed_entities["Degree"]
-    colleges = parsed_entities["College Name"]
-    years = parsed_entities["Graduation Year"]
+    # --- 2. Experience ---
+    # Group Designation and Company
+    # The model labels are usually 'Designation' and 'Company' (or 'Organization')
+    # Let's check model outputs. aggret model outputs: Name, College Name, Degree, Graduation Year, Years of Experience, Companies worked at, Designation, Skills, Location, Email Address
+    # Note: Label names might differ slightly. 'Companies worked at' vs 'Company'.
+    # We will assume 'Companies worked at' and 'Designation'
     
-    # Try to zip if counts match or are close
-    # For simplicity, we iterate max length and fill what we can
-    max_len = max(len(degrees), len(colleges))
-    if max_len > 0:
-        for i in range(max_len):
-            edu_item = {
-                "institution": colleges[i] if i < len(colleges) else (colleges[0] if colleges else "Unknown University"),
-                "degree": degrees[i] if i < len(degrees) else (degrees[0] if degrees else "Degree"),
-                "startDate": "",
-                "endDate": years[i] if i < len(years) else "",
-                "grade": ""
-            }
-            education_entries.append(edu_item)
+    exp_groups = group_entities_by_proximity(entities, 'Designation', 'Companies worked at', threshold=200)
     
-    # Fallback if BERT found nothing but we have a section
-    if not education_entries and "education" in sections:
-        edu_text = sections["education"]
-        # Treat lines as entries roughly
-        parts = [l.strip() for l in edu_text.splitlines() if l.strip()]
-        if parts:
-             education_entries.append({
-                 "institution": parts[0],
-                 "degree": parts[1] if len(parts)>1 else "",
-                 "startDate": "",
-                 "endDate": "",
-                 "grade": ""
-             })
-
-    # 3. Experience
     experience_entries = []
-    designations = parsed_entities["Designation"]
-    companies = parsed_entities["Companies worked at"]
-    
-    # Heuristic: zip them if count matches perfectly, else creates separate or best guess
-    # Usually NER finds Company then Designation or vice versa.
-    max_exp = max(len(designations), len(companies))
-    if max_exp > 0:
-         for i in range(max_exp):
-            role = designations[i] if i < len(designations) else "Employee"
-            comp = companies[i] if i < len(companies) else "Unknown Company"
+    if exp_groups:
+        for g in exp_groups:
             experience_entries.append({
-                "company": comp,
-                "role": role,
+                "company": g.get('Companies worked at', 'Unknown Company'),
+                "role": g.get('Designation', 'Employee'),
                 "startDate": "",
                 "endDate": "",
                 "description": []
             })
-            
-    # Fallback to section
-    if not experience_entries and "experience" in sections:
-        exp_text = sections["experience"]
-        # Split by empty lines or similar
-        parts = [p.strip() for p in re.split(r"\n\s*\n", exp_text) if p.strip()]
-        for p in parts:
-            lines = p.splitlines()
-            title = lines[0] if lines else "Experience"
-            desc = lines[1:] if len(lines) > 1 else []
-            experience_entries.append({
-                "company": "", 
-                "role": title,
-                "startDate": "", 
-                "endDate": "",
-                "description": desc
-            })
+    else:
+        # Fallback
+        if "experience" in sections:
+            exp_text = sections["experience"]
+            parts = re.split(r"\n\s*\n", exp_text)
+            for p in parts:
+                lines = p.splitlines()
+                if lines:
+                    experience_entries.append({
+                        "company": "",
+                        "role": lines[0],
+                        "startDate": "",
+                        "endDate": "",
+                        "description": lines[1:] if len(lines)>1 else []
+                    })
 
-    # 4. Projects
+    # --- 3. Education ---
+    # Group Degree and College Name
+    edu_groups = group_entities_by_proximity(entities, 'Degree', 'College Name', threshold=200)
+    
+    education_entries = []
+    if edu_groups:
+        for g in edu_groups:
+            education_entries.append({
+                "institution": g.get('College Name', 'Unknown University'),
+                "degree": g.get('Degree', 'Degree'),
+                "startDate": "",
+                "endDate": "", # We could look for 'Graduation Year' here too
+                "grade": ""
+            })
+    else:
+        # Fallback
+        if "education" in sections:
+            edu_text = sections["education"]
+            parts = [l for l in edu_text.splitlines() if l.strip()]
+            if parts:
+                 education_entries.append({
+                     "institution": parts[0],
+                     "degree": parts[1] if len(parts)>1 else "",
+                     "startDate": "",
+                     "endDate": "",
+                     "grade": ""
+                 })
+
+    # --- 4. Skills ---
+    # Extract all skills and split them
+    skill_ents = [e['word'] for e in entities if e['entity_group'] == 'Skills']
+    all_skills = []
+    for s in skill_ents:
+        # Split by comma or bullet points
+        parts = re.split(r"[,•\n]", s)
+        for p in parts:
+            p = p.strip()
+            if p and len(p) > 1:
+                all_skills.append(p)
+                
+    tech_skills = list(set(all_skills))
+    
+    skills_obj = {
+        "technical": tech_skills,
+        "soft": []
+    }
+    
+    # --- 5. Projects ---
     projects = []
     if "projects" in sections:
         proj_text = sections["projects"]
-        # Heuristic split
         parts = [p.strip() for p in re.split(r"\n\s*\n", proj_text) if p.strip()]
         for p in parts:
             lines = p.splitlines()
@@ -231,17 +285,8 @@ def parse_resume(path: str) -> Dict[str, Any]:
                 "technologies": [],
                 "link": ""
             })
-
-    # 5. Skills
-    # Deduplicate skills
-    tech_skills = list(set(parsed_entities["Skills"]))
-    
-    skills_obj = {
-        "technical": tech_skills,
-        "soft": [] # BERT doesn't tag soft skills separately usually
-    }
-    
-    # 6. Certifications
+            
+    # --- 6. Certifications ---
     certifications = []
     if "certifications" in sections:
         cert_text = sections["certifications"]
