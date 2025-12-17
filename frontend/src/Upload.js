@@ -27,6 +27,138 @@ export default function Upload({ onExpand }) {
     const fd = new FormData();
     fd.append("file", file);
 
+
+    const tempRes = {
+      personalInfo: {
+        fullName: "Waquar Hassan",
+        jobTitle: "Data Scientist",
+        email: "hello@waquar.com",
+        phone: "+91 8271981162",
+        location: "India",
+        summary:
+          "Data Scientist with strong foundations in Machine Learning, Data Analysis, and Statistical Modeling. Experienced in building end-to-end data pipelines, developing predictive models, and deploying data-driven solutions using Python, SQL, and modern ML frameworks. Passionate about transforming raw data into actionable insights.",
+        socialLinks: {
+          github: "https://github.com/waquarhassan",
+          linkedin: "https://linkedin.com/in/waquarhassan",
+          portfolio: "https://waquar.com"
+        }
+      },
+
+      education: [
+        {
+          institution: "Institute of Management Studies (IMS)",
+          degree: "Master’s in Management Studies",
+          startDate: "2021",
+          endDate: "2023",
+          grade: "First Class"
+        },
+        {
+          institution: "University / College",
+          degree: "Bachelor’s Degree",
+          startDate: "2018",
+          endDate: "2021",
+          grade: "First Class"
+        },
+        {
+          institution: "Online Certification Platform",
+          degree: "Java Programming",
+          startDate: "2020",
+          endDate: "2020",
+          grade: "Completed"
+        },
+        {
+          institution: "Online Certification Platform",
+          degree: "MS Excel for Data Analysis",
+          startDate: "2020",
+          endDate: "2020",
+          grade: "Completed"
+        }
+      ],
+
+      experience: [
+        {
+          company: "SoftRetic",
+          role: "Data Analyst Intern",
+          startDate: "2021",
+          endDate: "2022",
+          responsibilities: [
+            "Performed data cleaning, preprocessing, and exploratory data analysis (EDA) on large datasets",
+            "Built dashboards and reports using Excel and Python for business insights",
+            "Assisted in developing predictive models for customer behavior analysis"
+          ]
+        }
+      ],
+
+      projects: [
+        {
+          title: "NearKart",
+          description:
+            "A location-based application that helps users discover nearby street vendors with real-time location tracking, available items, pricing, and ratings. Implemented backend APIs and data storage, and analyzed user interaction data to improve vendor recommendations.",
+          technologies: [
+            "Python",
+            "Django",
+            "PostgreSQL",
+            "Machine Learning",
+            "Geospatial Analysis"
+          ],
+          link: ""
+        },
+        {
+          title: "Resume Parsing & Skill Extraction System",
+          description:
+            "Developed an NLP-based resume parser using Transformer models to extract structured information such as skills, education, and experience in JSON format.",
+          technologies: [
+            "Python",
+            "BERT",
+            "spaCy",
+            "NER",
+            "FastAPI"
+          ],
+          link: ""
+        }
+      ],
+
+      skills: {
+        technical: [
+          "Python",
+          "SQL",
+          "Pandas",
+          "NumPy",
+          "Scikit-learn",
+          "Machine Learning",
+          "Statistics",
+          "Data Visualization (Matplotlib, Seaborn)",
+          "NLP",
+          "Django",
+          "FastAPI"
+        ],
+        soft: [
+          "Analytical Thinking",
+          "Problem Solving",
+          "Data Storytelling",
+          "Communication",
+          "Team Collaboration"
+        ]
+      },
+
+      certifications: [
+        {
+          name: "AWS Educate – Introduction to RPA",
+          year: "2020"
+        },
+        {
+          name: "Complete Web Challenges",
+          organization: "SoftRetic",
+          year: "2021"
+        },
+        {
+          name: "Data Science & Machine Learning",
+          organization: "Online Platform",
+          year: "2022"
+        }
+      ]
+    };
+
     try {
       const res = await axios.post("http://localhost:8000/parse", fd, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -36,6 +168,8 @@ export default function Upload({ onExpand }) {
       if (onExpand) onExpand();
     } catch (e) {
       alert("Upload failed");
+      setPreview(tempRes);
+      onExpand();
     } finally {
       setLoading(false);
     }
@@ -62,7 +196,7 @@ export default function Upload({ onExpand }) {
       ...preview,
       skills: {
         ...preview.skills,
-        technical: [...(preview.skills.technical || []), "New Skill"]
+        technical: [...(preview.skills.technical || []), ""]
       }
     });
   };
@@ -93,7 +227,7 @@ export default function Upload({ onExpand }) {
   const addListWorkDesc = (expIndex) => {
     const list = [...preview.experience];
     if (!list[expIndex].description) list[expIndex].description = [];
-    list[expIndex].description.push("New responsibility");
+    list[expIndex].description.push("");
     setPreview({ ...preview, experience: list });
   };
 
@@ -239,7 +373,7 @@ export default function Upload({ onExpand }) {
               <section>
                 <div className="flex justify-between items-center mb-4">
                   <h4 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2"><Briefcase size={16} /> Experience</h4>
-                  <button onClick={() => addListItem("experience", { company: "New Company", role: "Role", startDate: "", endDate: "", description: [] })} className="text-xs text-blue-500 font-bold hover:underline">+ Add Job</button>
+                  <button onClick={() => addListItem("experience", { company: "", role: "", startDate: "", endDate: "", description: [] })} className="text-xs text-blue-500 font-bold hover:underline">+ Add Job</button>
                 </div>
                 <div className="space-y-4">
                   {preview.experience?.map((exp, i) => (
@@ -250,9 +384,9 @@ export default function Upload({ onExpand }) {
                           placeholder="Role" value={exp.role || ""} onChange={(e) => updateList("experience", i, "role", e.target.value)} />
                         <input className="p-2 rounded border bg-white dark:bg-gray-600 dark:border-gray-500"
                           placeholder="Company" value={exp.company || ""} onChange={(e) => updateList("experience", i, "company", e.target.value)} />
-                        <input className="p-2 rounded border bg-white dark:bg-gray-600 dark:border-gray-500 text-xs"
+                        <input type="date" className="p-2 rounded border bg-white dark:bg-gray-600 dark:border-gray-500 text-xs"
                           placeholder="Start Date" value={exp.startDate || ""} onChange={(e) => updateList("experience", i, "startDate", e.target.value)} />
-                        <input className="p-2 rounded border bg-white dark:bg-gray-600 dark:border-gray-500 text-xs"
+                        <input type="date" className="p-2 rounded border bg-white dark:bg-gray-600 dark:border-gray-500 text-xs"
                           placeholder="End Date" value={exp.endDate || ""} onChange={(e) => updateList("experience", i, "endDate", e.target.value)} />
                       </div>
                       <div className="pl-4 border-l-2 border-gray-300 dark:border-gray-600 space-y-2">
@@ -274,7 +408,7 @@ export default function Upload({ onExpand }) {
               <section>
                 <div className="flex justify-between items-center mb-4">
                   <h4 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2"><GraduationCap size={16} /> Education</h4>
-                  <button onClick={() => addListItem("education", { institution: "University", degree: "Degree", endDate: "" })} className="text-xs text-blue-500 font-bold hover:underline">+ Add Education</button>
+                  <button onClick={() => addListItem("education", { institution: "", degree: "", endDate: "" })} className="text-xs text-blue-500 font-bold hover:underline">+ Add Education</button>
                 </div>
                 <div className="space-y-3">
                   {preview.education?.map((edu, i) => (
@@ -285,7 +419,7 @@ export default function Upload({ onExpand }) {
                         <div className="flex gap-2 text-sm text-gray-500">
                           <input className="flex-1 bg-transparent outline-none"
                             placeholder="Institution" value={edu.institution || ""} onChange={(e) => updateList("education", i, "institution", e.target.value)} />
-                          <input className="w-20 bg-transparent outline-none text-right"
+                          <input type="date" className="w-32 bg-transparent outline-none text-right"
                             placeholder="Year" value={edu.endDate || ""} onChange={(e) => updateList("education", i, "endDate", e.target.value)} />
                         </div>
                       </div>
@@ -299,7 +433,7 @@ export default function Upload({ onExpand }) {
               <section>
                 <div className="flex justify-between items-center mb-4">
                   <h4 className="text-sm font-bold uppercase tracking-wider text-gray-400 flex items-center gap-2"><Link2 size={16} /> Projects</h4>
-                  <button onClick={() => addListItem("projects", { title: "Project Name", description: "Description...", link: "" })} className="text-xs text-blue-500 font-bold hover:underline">+ Add Project</button>
+                  <button onClick={() => addListItem("projects", { title: "", description: "", link: "" })} className="text-xs text-blue-500 font-bold hover:underline">+ Add Project</button>
                 </div>
                 <div className="space-y-4">
                   {preview.projects?.map((proj, i) => (
@@ -328,8 +462,8 @@ export default function Upload({ onExpand }) {
                   key={t.id}
                   onClick={() => setSelectedTemplate(t.id)}
                   className={`cursor-pointer rounded-xl p-4 border-2 transition-all relative overflow-hidden group ${selectedTemplate === t.id
-                      ? "border-blue-500 ring-2 ring-blue-500/20 shadow-lg scale-105 bg-white z-10"
-                      : "border-transparent bg-white/50 hover:bg-white hover:border-gray-300 hover:shadow-md"
+                    ? "border-blue-500 ring-2 ring-blue-500/20 shadow-lg scale-105 bg-white z-10"
+                    : "border-transparent bg-white/50 hover:bg-white hover:border-gray-300 hover:shadow-md"
                     }`}
                 >
                   <div className={`h-16 rounded-lg mb-3 flex items-center justify-center ${t.color}`}>
